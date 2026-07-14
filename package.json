@@ -12,14 +12,28 @@
       "import": "./src/index.js"
     }
   },
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "test": "node --test"
   },
-  "keywords": ["medintell", "healthcare", "api", "sdk", "fhir", "his"],
+  "keywords": [
+    "medintell",
+    "healthcare",
+    "api",
+    "sdk",
+    "fhir",
+    "his"
+  ],
   "license": "MIT",
-  "sideEffects": false
+  "sideEffects": false,
+  "homepage": "https://docs.medintell.co/api/sdks",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Medintell/medintell-node.git"
+  }
 }

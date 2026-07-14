@@ -4,6 +4,18 @@ Official JavaScript / TypeScript SDK for the [MedIntell REST API](https://docs.m
 Zero dependencies — uses the platform `fetch` (Node 18+, Deno, Bun, or the browser
 via a server proxy; never ship your key to a browser).
 
+## Documentation
+
+Full platform docs live at **[docs.medintell.co](https://docs.medintell.co)**:
+
+- [REST API overview](https://docs.medintell.co/api/overview) — base URLs, auth, conventions
+- [Quickstart](https://docs.medintell.co/api/quickstart) — seed your data in dependency order
+- [SDKs guide](https://docs.medintell.co/api/sdks) — this SDK, side by side with Python
+- [API conventions](https://docs.medintell.co/api/conventions) — prefixed ids, idempotency keys, cursor pagination, errors
+- Per-resource references: [Patients](https://docs.medintell.co/api/patients), [Visits](https://docs.medintell.co/api/visits), [Departments](https://docs.medintell.co/api/departments), [Doctors](https://docs.medintell.co/api/doctors), [Payers](https://docs.medintell.co/api/payers)
+
+Every SDK method maps 1:1 to an endpoint documented there.
+
 ## Install
 
 ```bash
