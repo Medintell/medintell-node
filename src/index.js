@@ -1,0 +1,221 @@
+// @medintell/sdk — official JavaScript/TypeScript client for the MedIntell REST API.
+// Zero dependencies (uses global fetch — Node 18+ or any modern runtime).
+
+const DEFAULT_BASE_URL = 'https://api.medintell.co';
+
+export class MedIntellError extends Error {
+  constructor(message, { status, code, type, requestId } = {}) {
+    super(message);
+    this.name = 'MedIntellError';
+    this.status = status;
+    this.code = code;
+    this.type = type;
+    this.requestId = requestId;
+  }
+}
+
+// --- case conversion (SDK uses camelCase; the API speaks snake_case) ---------
+const toSnake = (s) => s.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase());
+const toCamel = (s) => s.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
+
+function convertKeys(value, fn) {
+  if (Array.isArray(value)) return value.map((v) => convertKeys(v, fn));
+  if (value && typeof value === 'object' && value.constructor === Object) {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [fn(k), convertKeys(v, fn)]));
+  }
+  return value;
+}
+const encodeBody = (o) => convertKeys(o, toSnake);
+const decodeBody = (o) => convertKeys(o, toCamel);
+
+function uuid() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+class HttpClient {
+  constructor({ apiKey, baseUrl = DEFAULT_BASE_URL, timeout = 30000, maxRetries = 2 }) {
+    if (!apiKey) throw new MedIntellError('apiKey is required');
+    this.apiKey = apiKey;
+    this.baseUrl = baseUrl.replace(/\/$/, '');
+    this.timeout = timeout;
+    this.maxRetries = maxRetries;
+  }
+
+  async request(method, path, { query, body, idempotencyKey } = {}) {
+    const url = new URL(this.baseUrl + path);
+    if (query) {
+      for (const [k, v] of Object.entries(query)) {
+        if (v !== undefined && v !== null) url.searchParams.set(toSnake(k), String(v));
+      }
+    }
+    const headers = { Authorization: `Bearer ${this.apiKey}`, Accept: 'application/json' };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    if (method === 'POST') headers['Idempotency-Key'] = idempotencyKey || uuid();
+
+    let attempt = 0;
+    for (;;) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), this.timeout);
+      let res;
+      try {
+        res = await fetch(url, {
+          method,
+          headers,
+          body: body !== undefined ? JSON.stringify(encodeBody(body)) : undefined,
+          signal: controller.signal,
+        });
+      } catch (err) {
+        clearTimeout(timer);
+        if (attempt < this.maxRetries) {
+          await sleep(2 ** attempt * 200 + Math.random() * 100);
+          attempt++;
+          continue;
+        }
+        throw new MedIntellError(`network error: ${err.message}`);
+      }
+      clearTimeout(timer);
+
+      if (res.status === 429 || res.status >= 500) {
+        if (attempt < this.maxRetries) {
+          const retryAfter = Number(res.headers.get('retry-after'));
+          await sleep(retryAfter ? retryAfter * 1000 : 2 ** attempt * 200 + Math.random() * 100);
+          attempt++;
+          continue;
+        }
+      }
+
+      const text = await res.text();
+      const payload = text ? JSON.parse(text) : {};
+      if (!res.ok) {
+        const e = payload.error || {};
+        throw new MedIntellError(e.message || `HTTP ${res.status}`, {
+          status: res.status,
+          code: e.code,
+          type: e.type,
+          requestId: e.request_id || res.headers.get('x-request-id'),
+        });
+      }
+      return decodeBody(payload);
+    }
+  }
+
+  get(path, query) {
+    return this.request('GET', path, { query });
+  }
+  post(path, body, idempotencyKey) {
+    return this.request('POST', path, { body, idempotencyKey });
+  }
+  put(path, body) {
+    return this.request('PUT', path, { body });
+  }
+}
+
+// --- resources ---------------------------------------------------------------
+
+class Resource {
+  constructor(http, base) {
+    this._http = http;
+    this._base = base;
+  }
+  /** Async iterator that walks every page via the cursor. */
+  async *iterate(query = {}) {
+    let cursor;
+    for (;;) {
+      const page = await this._http.get(this._base, { limit: 200, ...query, cursor });
+      for (const row of page.data || []) yield row;
+      if (!page.hasMore || !page.nextCursor) return;
+      cursor = page.nextCursor;
+    }
+  }
+}
+
+class Organizations extends Resource {
+  constructor(http) { super(http, '/api/v1/organizations'); }
+  list() { return this._http.get(this._base); }
+  retrieve(orgId) { return this._http.get(`${this._base}/${orgId}`); }
+}
+
+class Facilities extends Resource {
+  constructor(http) { super(http, '/api/v1/branches'); }
+  list() { return this._http.get(this._base); }
+  create({ orgId, ...body }) { return this._http.post(`/api/v1/organizations/${orgId}/branches`, body); }
+}
+
+class Departments extends Resource {
+  constructor(http) { super(http, '/api/v1/departments'); }
+  list(query) { return this._http.get(this._base, query); }
+  retrieve(id) { return this._http.get(`${this._base}/${id}`); }
+  create(body, idempotencyKey) { return this._http.post(this._base, body, idempotencyKey); }
+  update(id, body) { return this._http.put(`${this._base}/${id}`, body); }
+  kpis(query) { return this._http.get(`${this._base}/kpis`, query); }
+}
+
+class Doctors extends Resource {
+  constructor(http) { super(http, '/api/v1/doctors'); }
+  list(query) { return this._http.get(this._base, query); }
+  retrieve(id) { return this._http.get(`${this._base}/${id}`); }
+  create(body, idempotencyKey) { return this._http.post(this._base, body, idempotencyKey); }
+  update(id, body) { return this._http.put(`${this._base}/${id}`, body); }
+  kpis(query) { return this._http.get(`${this._base}/kpis`, query); }
+}
+
+class Payers extends Resource {
+  constructor(http) { super(http, '/api/v1/payers'); }
+  list(query) { return this._http.get(this._base, query); }
+  create(body, idempotencyKey) { return this._http.post(this._base, body, idempotencyKey); }
+  update(payerId, body) { return this._http.put(`${this._base}/${payerId}`, body); }
+}
+
+class Patients extends Resource {
+  constructor(http) { super(http, '/api/v1/patients'); }
+  list(query) { return this._http.get(this._base, query); }
+  retrieve(id) { return this._http.get(`${this._base}/${id}`); }
+  create(body, idempotencyKey) { return this._http.post(this._base, body, idempotencyKey); }
+  update(id, body) { return this._http.put(`${this._base}/${id}`, body); }
+}
+
+class Visits extends Resource {
+  constructor(http) { super(http, '/api/v1/visits'); }
+  list(query) { return this._http.get(this._base, query); }
+  stats() { return this._http.get(`${this._base}/stats`); }
+  create(body, idempotencyKey) { return this._http.post(this._base, body, idempotencyKey); }
+  update(id, body) { return this._http.put(`${this._base}/${id}`, body); }
+  correctDiagnosis(id, body) { return this._http.put(`${this._base}/${id}/diagnoses`, body); }
+}
+
+class Ingest {
+  constructor(http) { this._http = http; }
+  patients(body, idempotencyKey) { return this._http.post('/api/v1/ingest/patients', body, idempotencyKey); }
+  schema() { return this._http.get('/api/v1/ingest/schema'); }
+}
+
+export class MedIntell {
+  /**
+   * @param {{ apiKey: string, baseUrl?: string, timeout?: number, maxRetries?: number }} opts
+   */
+  constructor(opts = {}) {
+    const http = new HttpClient(opts);
+    this._http = http;
+    this.organizations = new Organizations(http);
+    this.facilities = new Facilities(http);
+    this.departments = new Departments(http);
+    this.doctors = new Doctors(http);
+    this.payers = new Payers(http);
+    this.patients = new Patients(http);
+    this.visits = new Visits(http);
+    this.ingest = new Ingest(http);
+  }
+
+  /** Authenticated connectivity check. */
+  health() {
+    return this._http.get('/api/v1/health');
+  }
+}
+
+export default MedIntell;

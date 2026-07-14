@@ -1,0 +1,25 @@
+{
+  "name": "@medintell/sdk",
+  "version": "0.1.0",
+  "description": "Official JavaScript/TypeScript SDK for the MedIntell REST API.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    }
+  },
+  "files": ["src"],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": ["medintell", "healthcare", "api", "sdk", "fhir", "his"],
+  "license": "MIT",
+  "sideEffects": false
+}
