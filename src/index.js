@@ -125,7 +125,7 @@ class Resource {
   }
   /** Async iterator that walks every page via the cursor. */
   async *iterate(query = {}) {
-    let cursor;
+    let cursor = ''; // empty cursor = keyset mode from page one
     for (;;) {
       const page = await this._http.get(this._base, { limit: 200, ...query, cursor });
       for (const row of page.data || []) yield row;
