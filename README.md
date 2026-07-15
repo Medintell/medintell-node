@@ -35,14 +35,14 @@ const health = await mi.health();
 
 // Seed reference data in dependency order, reusing the returned ids
 const dept  = await mi.departments.create({ name: 'Cardiology', facilityId: 'fac_1B7dQ2' });
-const doc   = await mi.doctors.create({ name: 'Dr. Yusuf Ashraf', departmentId: dept.id, facilityId: 'fac_1B7dQ2' });
+const doc   = await mi.doctors.create({ name: 'Dr. Shakshouka Hummusi', departmentId: dept.id, facilityId: 'fac_1B7dQ2' });
 const payer = await mi.payers.create({ name: 'Falafel Assurance Co.' });
 
 const patient = await mi.patients.create({
   mrn: 'MRN-2026-00001',
   facilityId: 'fac_1B7dQ2',
-  firstName: 'Saleh',
-  lastName: 'Khateeb',
+  firstName: 'Kabsa',
+  lastName: 'Al-Majboos',
   dob: '1985-03-15',
   gender: 'M',
 });
