@@ -1,6 +1,6 @@
 {
   "name": "@medintell/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Official JavaScript/TypeScript SDK for the MedIntell REST API.",
   "type": "module",
   "main": "src/index.js",

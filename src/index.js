@@ -38,6 +38,8 @@ function uuid() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const VERSION = '0.1.1';
+
 class HttpClient {
   constructor({ apiKey, baseUrl = DEFAULT_BASE_URL, timeout = 30000, maxRetries = 2 }) {
     if (!apiKey) throw new MedIntellError('apiKey is required');
@@ -54,7 +56,7 @@ class HttpClient {
         if (v !== undefined && v !== null) url.searchParams.set(toSnake(k), String(v));
       }
     }
-    const headers = { Authorization: `Bearer ${this.apiKey}`, Accept: 'application/json' };
+    const headers = { Authorization: `Bearer ${this.apiKey}`, Accept: 'application/json', 'User-Agent': `medintell-node/${VERSION}` };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (method === 'POST') headers['Idempotency-Key'] = idempotencyKey || uuid();
 
@@ -109,7 +111,12 @@ class HttpClient {
     return this.request('GET', path, { query });
   }
   post(path, body, idempotencyKey) {
-    return this.request('POST', path, { body, idempotencyKey });
+    // Docs show create(body, { idempotencyKey }) — accept the options object
+    // form as well as a bare string.
+    const key = idempotencyKey && typeof idempotencyKey === 'object'
+      ? idempotencyKey.idempotencyKey
+      : idempotencyKey;
+    return this.request('POST', path, { body, idempotencyKey: key });
   }
   put(path, body) {
     return this.request('PUT', path, { body });
@@ -168,6 +175,7 @@ class Doctors extends Resource {
 class Payers extends Resource {
   constructor(http) { super(http, '/api/v1/payers'); }
   list(query) { return this._http.get(this._base, query); }
+  retrieve(payerId) { return this._http.get(`${this._base}/${payerId}`); }
   create(body, idempotencyKey) { return this._http.post(this._base, body, idempotencyKey); }
   update(payerId, body) { return this._http.put(`${this._base}/${payerId}`, body); }
 }
@@ -178,6 +186,10 @@ class Patients extends Resource {
   retrieve(id) { return this._http.get(`${this._base}/${id}`); }
   create(body, idempotencyKey) { return this._http.post(this._base, body, idempotencyKey); }
   update(id, body) { return this._http.put(`${this._base}/${id}`, body); }
+  screeningEligibility(id) { return this._http.get(`${this._base}/${id}/screening-eligibility`); }
+  screeningMatches(id) { return this._http.get(`${this._base}/${id}/screening-matches`); }
+  vbcEligibility(id) { return this._http.get(`${this._base}/${id}/vbc-eligibility`); }
+  vbcEnrollments(id) { return this._http.get(`${this._base}/${id}/vbc-enrollments`); }
 }
 
 class Visits extends Resource {

@@ -64,6 +64,7 @@ export declare class MedIntell {
 
   payers: {
     list(query?: Json): Promise<Page>;
+    retrieve(payerId: string): Promise<Json>;
     create(body: { name: string }, idempotencyKey?: string): Promise<Json>;
     update(payerId: string, body: Json): Promise<Json>;
   } & Resource;
@@ -71,14 +72,18 @@ export declare class MedIntell {
   patients: {
     list(query?: Json): Promise<Page>;
     retrieve(id: string): Promise<Json>;
-    create(body: Json, idempotencyKey?: string): Promise<Json>;
+    create(body: Json, idempotencyKey?: string | { idempotencyKey?: string }): Promise<Json>;
     update(id: string, body: Json): Promise<Json>;
+    screeningEligibility(id: string): Promise<Json>;
+    screeningMatches(id: string): Promise<Json>;
+    vbcEligibility(id: string): Promise<Json>;
+    vbcEnrollments(id: string): Promise<Json>;
   } & Resource;
 
   visits: {
     list(query?: Json): Promise<Page>;
     stats(): Promise<Json>;
-    create(body: Json, idempotencyKey?: string): Promise<Json>;
+    create(body: Json, idempotencyKey?: string | { idempotencyKey?: string }): Promise<Json>;
     update(id: string, body: Json): Promise<Json>;
     correctDiagnosis(id: string, body: Json): Promise<Json>;
   } & Resource;
