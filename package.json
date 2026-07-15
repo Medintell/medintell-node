@@ -35,5 +35,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Medintell/medintell-node.git"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
