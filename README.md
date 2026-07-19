@@ -70,6 +70,15 @@ const visit = await mi.visits.create({
 - **Retries** — `429` / `5xx` / network errors retry with backoff (honours `Retry-After`).
 - **Cursor pagination** — `for await (const row of mi.patients.iterate()) { … }`.
 - **Typed errors** — failures throw `MedIntellError` with `.status`, `.code`, `.requestId`.
+- **Analytics** — the full Analysis Hub: `mi.analytics.overview() / .clinical() / .demographics() / .financial() / .operational() / .patients() / .dataRange() / .filterOptions(dimension)`. Array filters serialize to CSV; discover valid filter values (and numeric ids) with `filterOptions()`.
+
+## Analytics
+
+```js
+const kpis = await mi.analytics.overview({ startDate: '2026-01-01', endDate: '2026-06-30' });
+const cardio = await mi.analytics.filterOptions('department_ids', { search: 'cardio' });
+const burden = await mi.analytics.clinical({ departmentIds: [cardio.data[0].value], genders: ['male'] });
+```
 
 ## Pagination
 

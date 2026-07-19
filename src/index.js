@@ -38,7 +38,7 @@ function uuid() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const VERSION = '0.1.1';
+const VERSION = '0.2.0';
 
 class HttpClient {
   constructor({ apiKey, baseUrl = DEFAULT_BASE_URL, timeout = 30000, maxRetries = 2 }) {
@@ -207,6 +207,34 @@ class Ingest {
   schema() { return this._http.get('/api/v1/ingest/schema'); }
 }
 
+/**
+ * Analysis Hub — the same aggregates the MedIntell dashboard shows.
+ * Every overview accepts the shared filter set (camelCase; arrays become
+ * CSV): startDate, endDate, branchId, departmentIds, doctorIds, genders,
+ * ageMin, ageMax, visitTypes, visitModes, payers, paymentTypes,
+ * maritalStatuses, nationalities, smoker, segmentId, mdcCode.
+ * Id filters take the numeric ids returned by filterOptions().
+ */
+class Analytics {
+  constructor(http) { this._http = http; this._base = '/api/v1/analytics'; }
+  /** Headline KPIs: patients, visits, growth, top departments/diagnoses, trend. */
+  overview(query) { return this._http.get(`${this._base}/overview`, query); }
+  /** Top ICD diagnoses, chronic disease burden, clinical mix. */
+  clinical(query) { return this._http.get(`${this._base}/clinical/overview`, query); }
+  /** Gender / nationality / visit-mode distributions (diseaseName profiles one condition). */
+  demographics(query) { return this._http.get(`${this._base}/demographics/overview`, query); }
+  /** Revenue totals, average cost, revenue per patient. Requires analyst+ role. */
+  financial(query) { return this._http.get(`${this._base}/financial/overview`, query); }
+  /** Throughput and utilisation metrics. Requires analyst+ role. */
+  operational(query) { return this._http.get(`${this._base}/operational/overview`, query); }
+  /** Years/months that actually have visit data — call before picking dates. */
+  dataRange(query) { return this._http.get(`${this._base}/data-range`, query); }
+  /** Valid values (with counts) for a filter dimension, e.g. 'department_ids', 'payers'. */
+  filterOptions(dimension, query) { return this._http.get(`${this._base}/filter-options/${dimension}`, query); }
+  /** Drill-down patient list for the filtered population. */
+  patients(query) { return this._http.get(`${this._base}/patients`, query); }
+}
+
 export class MedIntell {
   /**
    * @param {{ apiKey: string, baseUrl?: string, timeout?: number, maxRetries?: number }} opts
@@ -222,6 +250,7 @@ export class MedIntell {
     this.patients = new Patients(http);
     this.visits = new Visits(http);
     this.ingest = new Ingest(http);
+    this.analytics = new Analytics(http);
   }
 
   /** Authenticated connectivity check. */

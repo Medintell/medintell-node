@@ -92,6 +92,54 @@ export declare class MedIntell {
     patients(body: Json, idempotencyKey?: string): Promise<Json>;
     schema(): Promise<Json>;
   };
+
+  analytics: {
+    overview(query?: AnalyticsFilters): Promise<Json>;
+    clinical(query?: AnalyticsFilters): Promise<Json>;
+    demographics(query?: AnalyticsFilters & { diseaseName?: string }): Promise<Json>;
+    /** Requires an analyst+ role. */
+    financial(query?: AnalyticsFilters): Promise<Json>;
+    /** Requires an analyst+ role. */
+    operational(query?: AnalyticsFilters): Promise<Json>;
+    /** Requires an analyst+ role. */
+    dataRange(query?: { branchId?: number }): Promise<Json>;
+    /** Requires an analyst+ role. */
+    filterOptions(dimension: AnalyticsDimension, query?: { search?: string; limit?: number }): Promise<{ data: { value: string | number; label: string; count: number }[] }>;
+    patients(query?: {
+      startDate?: string; endDate?: string; branchId?: number; segmentId?: number; mdcCode?: number;
+      diseaseName?: string; search?: string; riskLevel?: 'Severe' | 'Moderate' | 'Low';
+      page?: number; limit?: number;
+    }): Promise<Json>;
+  };
+}
+
+export type AnalyticsDimension =
+  | 'facility_ids' | 'department_ids' | 'doctor_ids' | 'payers'
+  | 'visit_modes' | 'visit_types' | 'payment_types' | 'nationalities'
+  | 'genders' | 'icd_codes' | 'icd_categories' | 'disease_names';
+
+/**
+ * Shared Analysis Hub filters. Arrays serialize to comma-separated values;
+ * id filters take the numeric ids returned by analytics.filterOptions().
+ */
+export interface AnalyticsFilters {
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
+  branchId?: number;
+  departmentIds?: number[] | string;
+  doctorIds?: number[] | string;
+  genders?: string[] | string;
+  ageMin?: number;
+  ageMax?: number;
+  visitTypes?: string[] | string;
+  visitModes?: string[] | string;
+  payers?: string[] | string;
+  paymentTypes?: string[] | string;
+  maritalStatuses?: string[] | string;
+  nationalities?: string[] | string;
+  smoker?: 'true' | 'false';
+  segmentId?: number;
+  mdcCode?: number;
 }
 
 export default MedIntell;
