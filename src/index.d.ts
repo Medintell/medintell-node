@@ -102,6 +102,7 @@ export declare class MedIntell {
     deferItem(journeyId: number, taskId: number, body: { until: string }): Promise<Json>;
     declineItem(journeyId: number, taskId: number, body?: { reason?: string }): Promise<Json>;
     worklist(query?: { status?: 'pending' | 'overdue' | 'completed' | 'declined'; programId?: number; dueBefore?: string; limit?: number }): Promise<Json>;
+    programs(query?: Json): Promise<Json>;
     events(query?: { cursor?: number; types?: string; limit?: number }): Promise<Json>;
   };
 
@@ -113,6 +114,7 @@ export declare class MedIntell {
     defer(statusId: number, body: { until: string }): Promise<Json>;
     decline(statusId: number, body?: { reason?: string }): Promise<Json>;
     exclude(statusId: number, body?: { reason?: string; until?: string }): Promise<Json>;
+    criteria(query?: Json): Promise<Json>;
     events(query?: { cursor?: number; types?: string; limit?: number }): Promise<Json>;
   };
 

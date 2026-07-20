@@ -287,6 +287,8 @@ class Vbc {
   declineItem(journeyId, taskId, body) { return this._http.post(`${this._base}/journeys/${journeyId}/items/${taskId}/decline`, body); }
   /** Org worklist. query: { status, programId?, dueBefore?, limit? }. */
   worklist(query) { return this._http.get(`${this._base}/journeys/items`, query); }
+  /** List the org's VBC programs (discover program ids to enroll into). */
+  programs(query) { return this._http.get('/api/v1/vbc/programs', query); }
   /** Replay feed. query: { cursor?, types?, limit? }. */
   events(query) { return this._http.get(`${this._base}/events`, query); }
 }
@@ -306,6 +308,8 @@ class Screening {
   decline(statusId, body) { return this._http.post(`${this._base}/statuses/${statusId}/decline`, body); }
   /** Clinician exclusion. body: { reason?, until? }. */
   exclude(statusId, body) { return this._http.post(`${this._base}/statuses/${statusId}/exclude`, body); }
+  /** List the org's screening criteria (discover criteria ids). */
+  criteria(query) { return this._http.get('/api/v1/population-screening/criteria', query); }
   events(query) { return this._http.get(`${this._base}/events`, query); }
 }
 
