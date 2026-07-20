@@ -70,6 +70,7 @@ const visit = await mi.visits.create({
 - **Retries** — `429` / `5xx` / network errors retry with backoff (honours `Retry-After`).
 - **Cursor pagination** — `for await (const row of mi.patients.iterate()) { … }`.
 - **Typed errors** — failures throw `MedIntellError` with `.status`, `.code`, `.requestId`.
+- **Ingest** — `mi.ingest.patients(batch)` pushes patients → visits → diagnoses in one idempotent call. A visit can also carry `labs` / `radiology` / `procedures` results, and `visitMode` accepts `VC` (virtual clinic) alongside IP/OP/ER/DC.
 - **Analytics** — the full Analysis Hub: `mi.analytics.overview() / .clinical() / .demographics() / .financial() / .operational() / .patients() / .dataRange() / .filterOptions(dimension)`. Array filters serialize to CSV; discover valid filter values (and numeric ids) with `filterOptions()`.
 
 ## Analytics
