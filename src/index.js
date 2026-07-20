@@ -38,7 +38,7 @@ function uuid() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 
 class HttpClient {
   constructor({ apiKey, baseUrl = DEFAULT_BASE_URL, timeout = 30000, maxRetries = 2 }) {
@@ -272,6 +272,43 @@ const ANALYSIS_REPORT_PATHS = {
   waiting_time: 'utilization/waiting-time',
 };
 
+class Vbc {
+  constructor(http) { this._http = http; this._base = '/api/v1/vbc'; }
+  /** All VBC program journeys for a patient. id = pat_… or "mrn:<MRN>". */
+  patientJourneys(id) { return this._http.get(`${this._base}/patients/${encodeURIComponent(id)}/journeys`); }
+  /** Point-of-care: what this patient owes now, with fill links. */
+  patientDue(id) { return this._http.get(`${this._base}/patients/${encodeURIComponent(id)}/due`); }
+  /** Qualified-but-not-enrolled programs. */
+  patientEligibility(id) { return this._http.get(`${this._base}/patients/${encodeURIComponent(id)}/eligibility`); }
+  /** Enroll a patient (idempotent). body: { programId, indexDate? }. */
+  enroll(id, body) { return this._http.post(`${this._base}/patients/${encodeURIComponent(id)}/journeys`, body); }
+  decline(journeyId, body) { return this._http.post(`${this._base}/journeys/${journeyId}/decline`, body); }
+  deferItem(journeyId, taskId, body) { return this._http.post(`${this._base}/journeys/${journeyId}/items/${taskId}/defer`, body); }
+  declineItem(journeyId, taskId, body) { return this._http.post(`${this._base}/journeys/${journeyId}/items/${taskId}/decline`, body); }
+  /** Org worklist. query: { status, programId?, dueBefore?, limit? }. */
+  worklist(query) { return this._http.get(`${this._base}/journeys/items`, query); }
+  /** Replay feed. query: { cursor?, types?, limit? }. */
+  events(query) { return this._http.get(`${this._base}/events`, query); }
+}
+
+class Screening {
+  constructor(http) { this._http = http; this._base = '/api/v1/screening'; }
+  /** All screening statuses for a patient. id = pat_… or "mrn:<MRN>". */
+  patientStatuses(id) { return this._http.get(`${this._base}/patients/${encodeURIComponent(id)}/statuses`); }
+  /** Org action list. query: { status, criteriaId?, facilityId?, limit? }. */
+  worklist(query) { return this._http.get(`${this._base}/worklist`, query); }
+  notified(statusId) { return this._http.post(`${this._base}/statuses/${statusId}/notified`, {}); }
+  /** Mark done with external evidence. body: { completedOn? }. */
+  report(statusId, body) { return this._http.post(`${this._base}/statuses/${statusId}/report`, body); }
+  /** Patient "later". body: { until }. */
+  defer(statusId, body) { return this._http.post(`${this._base}/statuses/${statusId}/defer`, body); }
+  /** Patient "no". body: { reason? }. */
+  decline(statusId, body) { return this._http.post(`${this._base}/statuses/${statusId}/decline`, body); }
+  /** Clinician exclusion. body: { reason?, until? }. */
+  exclude(statusId, body) { return this._http.post(`${this._base}/statuses/${statusId}/exclude`, body); }
+  events(query) { return this._http.get(`${this._base}/events`, query); }
+}
+
 export class MedIntell {
   /**
    * @param {{ apiKey: string, baseUrl?: string, timeout?: number, maxRetries?: number }} opts
@@ -288,6 +325,8 @@ export class MedIntell {
     this.visits = new Visits(http);
     this.ingest = new Ingest(http);
     this.analytics = new Analytics(http);
+    this.vbc = new Vbc(http);
+    this.screening = new Screening(http);
   }
 
   /** Authenticated connectivity check. */

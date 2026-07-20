@@ -93,6 +93,29 @@ export declare class MedIntell {
     schema(): Promise<Json>;
   };
 
+  vbc: {
+    patientJourneys(id: string): Promise<Json>;
+    patientDue(id: string): Promise<Json>;
+    patientEligibility(id: string): Promise<Json>;
+    enroll(id: string, body: { programId: number; indexDate?: string }): Promise<Json>;
+    decline(journeyId: number, body?: { reason?: string }): Promise<Json>;
+    deferItem(journeyId: number, taskId: number, body: { until: string }): Promise<Json>;
+    declineItem(journeyId: number, taskId: number, body?: { reason?: string }): Promise<Json>;
+    worklist(query?: { status?: 'pending' | 'overdue' | 'completed' | 'declined'; programId?: number; dueBefore?: string; limit?: number }): Promise<Json>;
+    events(query?: { cursor?: number; types?: string; limit?: number }): Promise<Json>;
+  };
+
+  screening: {
+    patientStatuses(id: string): Promise<Json>;
+    worklist(query?: { status?: 'eligible' | 'overdue' | 'notified' | 'completed' | 'declined' | 'deferred'; criteriaId?: number; facilityId?: string; limit?: number }): Promise<Json>;
+    notified(statusId: number): Promise<Json>;
+    report(statusId: number, body?: { completedOn?: string }): Promise<Json>;
+    defer(statusId: number, body: { until: string }): Promise<Json>;
+    decline(statusId: number, body?: { reason?: string }): Promise<Json>;
+    exclude(statusId: number, body?: { reason?: string; until?: string }): Promise<Json>;
+    events(query?: { cursor?: number; types?: string; limit?: number }): Promise<Json>;
+  };
+
   analytics: {
     overview(query?: AnalyticsFilters): Promise<Json>;
     clinical(query?: AnalyticsFilters): Promise<Json>;
