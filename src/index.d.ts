@@ -110,13 +110,29 @@ export declare class MedIntell {
       diseaseName?: string; search?: string; riskLevel?: 'Severe' | 'Moderate' | 'Low';
       page?: number; limit?: number;
     }): Promise<Json>;
+    /** Run any Analysis Hub report — returns { items, stats }. Reports marked analyst+ need that role. */
+    analysis(report: AnalysisReport, query?: AnalyticsFilters & {
+      diseaseName?: string; breakdown?: 'gender' | 'visit_type' | 'appointment_mode' | 'department';
+      granularity?: 'month' | 'day'; ageBands?: string[] | string; bmiBands?: string[] | string;
+      insurancePolicies?: string[] | string; losBands?: string[] | string; icdCodes?: string[] | string;
+      icdCategories?: string[] | string; isChronic?: 'true' | 'false'; riskTiers?: string[] | string;
+    }): Promise<Json>;
+    /** Disease prevalence vs city/national estimates. diseaseName required. */
+    diseasePrevalence(query: { diseaseName: string; startDate?: string; endDate?: string; branchId?: number; segmentId?: number }): Promise<Json>;
   };
 }
+
+export type AnalysisReport =
+  | 'payer' | 'payment_type' | 'revenue_trends' | 'gender' | 'age_group'
+  | 'nationality' | 'bmi' | 'visit_mode' | 'visit_type' | 'patient_type'
+  | 'appointment_mode' | 'registered_at_hospital' | 'departments' | 'physicians'
+  | 'physicians_per_department' | 'physician_visit_time' | 'average_los'
+  | 'average_lov' | 'waiting_time';
 
 export type AnalyticsDimension =
   | 'facility_ids' | 'department_ids' | 'doctor_ids' | 'payers'
   | 'visit_modes' | 'visit_types' | 'payment_types' | 'nationalities'
-  | 'genders' | 'icd_codes' | 'icd_categories' | 'disease_names';
+  | 'genders' | 'icd_codes' | 'icd_categories' | 'disease_names' | 'phm_segments';
 
 /**
  * Shared Analysis Hub filters. Arrays serialize to comma-separated values;

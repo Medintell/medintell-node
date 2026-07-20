@@ -38,7 +38,7 @@ function uuid() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 
 class HttpClient {
   constructor({ apiKey, baseUrl = DEFAULT_BASE_URL, timeout = 30000, maxRetries = 2 }) {
@@ -233,7 +233,44 @@ class Analytics {
   filterOptions(dimension, query) { return this._http.get(`${this._base}/filter-options/${dimension}`, query); }
   /** Drill-down patient list for the filtered population. */
   patients(query) { return this._http.get(`${this._base}/patients`, query); }
+  /**
+   * Run any Analysis Hub report — returns { items, stats }.
+   * Reports: payer, payment_type, revenue_trends, gender, age_group,
+   * nationality, bmi*, visit_mode, visit_type, patient_type,
+   * appointment_mode, registered_at_hospital, departments, physicians,
+   * physicians_per_department*, physician_visit_time, average_los*,
+   * average_lov*, waiting_time*  (* = analyst+ role).
+   */
+  analysis(report, query) {
+    const path = ANALYSIS_REPORT_PATHS[report];
+    if (!path) throw new MedIntellError(`unknown analysis report: ${report}`);
+    return this._http.get(`${this._base}/${path}`, query);
+  }
+  /** Disease prevalence vs city/national estimates. diseaseName is required. */
+  diseasePrevalence(query) { return this._http.get(`${this._base}/clinical/disease-prevalence-analysis`, query); }
 }
+
+const ANALYSIS_REPORT_PATHS = {
+  payer: 'financial/payer',
+  payment_type: 'financial/payment-type',
+  revenue_trends: 'financial/revenue-trends',
+  gender: 'demographics/gender',
+  age_group: 'demographics/age-group',
+  nationality: 'demographics/nationality',
+  bmi: 'demographics/bmi',
+  visit_mode: 'service/visit-mode',
+  visit_type: 'service/visit-type',
+  patient_type: 'service/patient-type',
+  appointment_mode: 'service/appointment-mode',
+  registered_at_hospital: 'service/registered-at-hospital',
+  departments: 'performance/departments',
+  physicians: 'performance/physicians',
+  physicians_per_department: 'performance/physicians-per-department',
+  physician_visit_time: 'performance/physician-visit-time',
+  average_los: 'utilization/average-los',
+  average_lov: 'utilization/average-lov',
+  waiting_time: 'utilization/waiting-time',
+};
 
 export class MedIntell {
   /**
